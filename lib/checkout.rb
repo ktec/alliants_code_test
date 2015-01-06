@@ -8,11 +8,12 @@ class Checkout
   end
   def total
     ## apply discounts
-    discount = 0
+    total_discount = 0
     @promotional_rules.each do |rule|
-      discount += rule.get_discount(items)
+      total_discount += rule.get_discount(items)
     end
-    total = items.inject(0){|sum,item| sum + item.price} - discount
+    # calculate the total price less total discount
+    total = items.inject(0){|sum,item| sum + item.price} - total_discount
     # round to pennies
     (total*100).round / 100.0
   end

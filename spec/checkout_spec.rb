@@ -48,10 +48,13 @@ module CheckoutSpecHelper
 end
 
 describe Checkout, '.total' do
+
   include CheckoutSpecHelper
+
   before :all do
     @item1,@item2,@item3 = catalogue
   end
+
   context "without discount rules" do
     let(:checkout) { Checkout.new(catalogue) }
     it "returns 0 for no items" do
@@ -72,19 +75,70 @@ describe Checkout, '.total' do
       expect(checkout.total).to eq(54.25)
     end
   end
+
   context "with discounted prices" do
+
     let(:promotional_rules) {
-      [discount2,discount1]
+      [discount1,discount2]
     }
     let(:checkout) { Checkout.new(catalogue,promotional_rules) }
+
+    # Basket: 001
+    # 9.25 = 9.25
+    # Total price expected: £9.25
+
     it "returns the correct price for item 001" do
       checkout.scan(@item1)
       expect(checkout.total).to eq(9.25)
     end
+
+    # Basket: 002,003
+    # 45 + 19.95 = 64.95 - 10% = 58.455
+    # Total price expected: £58.46
+
     it "returns the correct discounted price for two items" do
       checkout.scan(@item2)
       checkout.scan(@item3)
       expect(checkout.total).to eq(58.46)
     end
+
+    # Basket: 001,002,003 
+    # 9.25 + 45 + 19.95 = 74.2 - 10% = 66.78
+    # Total price expected: £66.78
+
+    it "returns 66.78 with a basket of 001,002,003" do
+      basket = [@item1,@item2,@item3]
+      basket.each {|item|
+        checkout.scan(item)
+      }
+      expect(checkout.total).to eq(66.78)
+    end
+
+    # Basket: 001,003,001
+    # 8.50 + 19.95 + 8.50 = 36.95
+    # Total price expected: £36.95
+
+    it "returns 36.95 with a basket of 001,003,001" do
+      basket = [@item1,@item3,@item1]
+      basket.each {|item|
+        checkout.scan(item)
+      }
+      expect(checkout.total).to eq(36.95)
+    end
+
+    # Basket: 001,002,001,003
+    # This total is affected by the order the discounts are applied:
+    # 9.25+45+9.25+19.95 = 83.45 - 8.345 - (0.75 * 2) = 73.61
+    # 8.5+45+8.5+19.95 = 81.95 - 8.195 = 73.76
+    # Total price expected: £73.76
+
+    it "returns 73.76 with a basket of 001,002,001,003" do
+      basket = [@item1,@item2,@item1,@item3]
+      basket.each {|item|
+        checkout.scan(item)
+      }
+      expect(checkout.total).to eq(73.76)
+    end
+
   end
 end
