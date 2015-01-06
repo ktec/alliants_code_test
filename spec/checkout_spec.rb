@@ -19,7 +19,32 @@ module CheckoutSpecHelper
     ]
   end
   # define a discount rule for over £60 spend, 10% off your purchase
+  def discount1
+    PromotionalRule.new("over_60_pounds") do |items|
+      total = items.inject(0){|sum,item|
+        sum + item.price
+      }
+      if total > 60
+        discount = (total/100 * 10)
+      else
+        discount = 0
+      end
+    end
+  end
   # define a discount rule for buying 2 or more lavender hearts (001), price drops to £8.50
+  def discount2
+    PromotionalRule.new("2_or_more_lavender_hearts") do |items|
+      # count lavender hearts
+      hearts = items.find_all{|item| item.id == "001" }
+      if hearts.count >= 2
+        # discount the lavender hearts
+        hearts.each do |heart|
+          heart.price = 8.50
+        end
+      end
+      discount = 0
+    end
+  end  
 end
 
 describe Checkout, '.total' do
@@ -45,6 +70,21 @@ describe Checkout, '.total' do
       checkout.scan(@item1)
       checkout.scan(@item2)
       expect(checkout.total).to eq(54.25)
+    end
+  end
+  context "with discounted prices" do
+    let(:promotional_rules) {
+      [discount2,discount1]
+    }
+    let(:checkout) { Checkout.new(catalogue,promotional_rules) }
+    it "returns the correct price for item 001" do
+      checkout.scan(@item1)
+      expect(checkout.total).to eq(9.25)
+    end
+    it "returns the correct discounted price for two items" do
+      checkout.scan(@item2)
+      checkout.scan(@item3)
+      expect(checkout.total).to eq(58.46)
     end
   end
 end
