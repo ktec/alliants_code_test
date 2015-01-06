@@ -36,5 +36,15 @@ describe Checkout, '.total' do
       checkout.scan(@item1)
       expect(checkout.total).to eq(9.25)
     end
+    it "returns the correct price for two of the same line item" do
+      checkout.scan(@item1)
+      checkout.scan(@item1)
+      expect(checkout.total).to eq(18.5)
+    end
+    it "returns the correct price for two different line items" do
+      checkout.scan(@item1)
+      checkout.scan(@item2)
+      expect(checkout.total).to eq(54.25)
+    end
   end
 end
